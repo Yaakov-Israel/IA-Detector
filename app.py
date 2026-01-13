@@ -2,15 +2,58 @@ import streamlit as st
 import requests
 import time
 
+# 1. Configuração da página (Isso traz o favicon de volta)
+st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
+
 def consultar_detector_ia(texto):
-    # URL atualizada para o sistema de Router do Hugging Face
-    API_URL = "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta"
+    # Tentamos a URL principal e a URL alternativa (router)
+    urls = [
+        "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta",
+        "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta"
+    ]
     
-    token = st.secrets.get("HF_TOKEN", "").strip()
+    # Busca e limpa o token de qualquer caractere invisível
+    token = st.secrets.get("HF_TOKEN", "").replace('"', '').replace("'", "").strip()
     
     if not token:
-        st.error("Token não encontrado nas Secrets do Streamlit!")
+        st.error("Token não encontrado nas Secrets!")
         return None
+        
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"inputs": texto, "options": {"wait_for_model": True}}
+    
+    for url in urls:
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=15)
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                continue # Tenta a próxima URL se for erro de autorização
+        except:
+            continue
+            
+    return None
+
+# --- INTERFACE ---
+st.title("🛡️ IA Detector: Identificador de Mídias")
+st.write("Analise se o conteúdo é humano ou sintético.")
+
+entrada_texto = st.text_area("Cole o texto aqui:", height=150)
+
+if st.button("🔍 Analisar Texto"):
+    if entrada_texto:
+        with st.spinner("Consultando laboratório de IA..."):
+            resultado = consultar_detector_ia(entrada_texto)
+            if resultado:
+                # O modelo retorna uma lista de listas: [[{'label': '...', 'score': ...}]]
+                label = resultado[0][0]['label']
+                score = resultado[0][0]['score'] * 100
+                if "Fake" in label or "ChatGPT" in label:
+                    st.error(f"🚨 ALERTA: Probabilidade de IA: {score:.2f}%")
+                else:
+                    st.success(f"✅ Humano detectado: {score:.2f}% de chance.")
+            else:
+                st.error("Erro de conexão final. Verifique se o Token no Secrets não possui a barra | antes das aspas.")
         
     headers = {"Authorization": f"Bearer {token}"}
     payload = {

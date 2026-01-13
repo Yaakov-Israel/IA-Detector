@@ -67,7 +67,7 @@ with aba_texto:
                     except:
                         st.error("Erro ao processar a resposta da IA.")
                 else:
-                    st.error("Erro de conexão. Verifique o Token nas Secrets.")
+                    st.error("Erro de conexão. Clique novamente para 'acordar' a Roberta.")
         else:
             st.warning("Por favor, cole um texto.")
 
@@ -83,7 +83,7 @@ with aba_imagem:
                 s.update(label="Varredura concluída!", state="complete")
             st.info("Em breve: Integração total com detector de difusão.")
 
-# --- ABA DE VÍDEO (Com a função de URL restaurada!) ---
+# --- ABA DE VÍDEO ---
 with aba_video:
     st.header("Detector de Deepfake")
     st.markdown("⚠️ **Alerta:** Vídeos de pessoas conhecidas a pedir dinheiro podem ser sintéticos.")

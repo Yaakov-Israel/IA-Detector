@@ -5,3 +5,4 @@ opencv-python-headless
 moviepy
 yt-dlp
 opencv-python-headless
+requests

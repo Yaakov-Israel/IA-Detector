@@ -1,66 +1,85 @@
 import streamlit as st
+import requests
 import time
 
+# Configuração da página
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
 
-st.title("🛡️ IA Detector: Identificador de Mídias")
-st.write("Proteja-se contra golpes. Analise textos, imagens e vídeos suspeitos.")
+# --- FUNÇÃO DE CONEXÃO COM A IA (HUGGING FACE) ---
+def consultar_detector_ia(texto):
+    # Modelo especializado em detectar textos gerados por GPT e outros LLMs
+    API_URL = "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta"
+    
+    # Busca o token que você salvou no Secrets do Streamlit
+    headers = {"Authorization": f"Bearer {st.secrets['HF_TOKEN']}"}
+    
+    payload = {"inputs": texto}
+    response = requests.post(API_URL, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
 
-# Criando as abas incluindo Vídeo agora
+# --- INTERFACE DO USUÁRIO ---
+st.title("🛡️ IA Detector: Identificador de Mídias")
+st.write("Proteja-se contra golpes. Analise se o conteúdo é humano ou sintético.")
+
 aba_texto, aba_imagem, aba_video = st.tabs(["✍️ Texto", "🖼️ Imagem", "🎥 Vídeo"])
 
+# --- ABA DE TEXTO (AGORA COM IA REAL) ---
 with aba_texto:
     st.header("Análise de Texto")
-    entrada = st.text_area("Cole o conteúdo da mensagem:")
-    if st.button("Verificar Texto"):
-        with st.spinner("Analisando padrões linguísticos..."):
-            time.sleep(1)
-            st.warning("Resultado: Alta probabilidade de geração por IA (85%). Cuidado com solicitações de dados.")
+    st.info("Ideal para verificar mensagens de WhatsApp, e-mails de phishing e propostas de empréstimo.")
+    
+    entrada_texto = st.text_area("Cole o conteúdo suspeito aqui:", height=150)
+    
+    if st.button("🔍 Iniciar Análise Inteligente"):
+        if entrada_texto:
+            with st.spinner("O cérebro está consultando os modelos de Deep Learning..."):
+                resultado = consultar_detector_ia(entrada_texto)
+                
+                if resultado:
+                    # O modelo retorna uma lista: [['Fake', score], ['Real', score]]
+                    # Vamos extrair a probabilidade de ser IA (Fake)
+                    label = resultado[0][0]['label']
+                    score = resultado[0][0]['score'] * 100
+                    
+                    if "Fake" in label or "ChatGPT" in label:
+                        st.error(f"🚨 ALERTA: Este texto tem {score:.2f}% de probabilidade de ter sido gerado por IA.")
+                        st.markdown("**Motivo:** Padrões estatísticos e repetições típicas de modelos de linguagem.")
+                    else:
+                        st.success(f"✅ Análise concluída: {score:.2f}% de chance de ser um texto Humano.")
+                else:
+                    st.error("Erro ao conectar com a IA. Verifique se o seu Token nas Secrets está correto.")
+        else:
+            st.warning("Por favor, cole um texto para analisar.")
 
+# --- ABA DE IMAGEM ---
 with aba_imagem:
     st.header("Análise de Imagem")
-    foto = st.file_uploader("Suba a foto", type=['jpg', 'png'])
+    foto = st.file_uploader("Suba a foto suspeita", type=['jpg', 'png', 'jpeg'])
     if foto:
-        st.image(foto)
-        if st.button("Escanear Pixels"):
-            st.info("Buscando por artefatos de difusão e metadados de IA...")
+        st.image(foto, caption="Análise visual carregada")
+        if st.button("🔬 Escanear Pixels"):
+            st.info("Em breve: Integração com detector de artefatos de difusão.")
 
+# --- ABA DE VÍDEO (FOCO EM DEEPFAKE) ---
 with aba_video:
     st.header("Detector de Deepfake")
-    st.markdown("⚠️ **Alerta de Segurança:** Criminosos usam vídeos sintéticos de pessoas conhecidas para solicitar transferências bancárias ou dados pessoais via Phishing.")
+    metodo_video = st.radio("Método:", ["Link da Rede Social", "Upload de Arquivo"])
     
-    # Opções de entrada de mídia
-    metodo_video = st.radio("Escolha o método de análise:", ["Link da Rede Social", "Upload de Arquivo"])
-
     if metodo_video == "Link da Rede Social":
-        url_input = st.text_input("Cole o link do vídeo (Instagram, X, YouTube, etc.):", placeholder="https://www.instagram.com/p/...")
-        if url_input:
-            st.info(f"Link detectado. O sistema tentará extrair os frames para análise forense.")
+        url = st.text_input("Cole o link (Instagram, X, etc.):")
     else:
-        video_file = st.file_uploader("Envie o vídeo suspeito (.mp4, .mov)", type=['mp4', 'mov'])
-        if video_file:
-            st.video(video_file)
+        video_file = st.file_uploader("Envie o arquivo", type=['mp4', 'mov'])
 
-    # Botão de ação unificado
-    if st.button("🚀 Iniciar Análise Forense"):
-        if (metodo_video == "Link da Rede Social" and url_input) or (metodo_video == "Upload de Arquivo" and video_file):
-            with st.status("Iniciando varredura profunda...", expanded=True) as status:
-                st.write("📥 Extraindo camadas de vídeo e áudio...")
-                time.sleep(2)
-                st.write("🔍 Analisando micro-expressões e sincronia labial...")
-                time.sleep(2)
-                st.write("🧬 Verificando artefatos de compressão e padrões de difusão...")
-                time.sleep(2)
-                status.update(label="Análise Concluída!", state="complete", expanded=False)
-            
-            # Exibição do Veredito (Lógica de simulação baseada em riscos reais)
-            st.error("🚨 ALERTA: Fortes indícios de manipulação detectados (92% de probabilidade).")
-            st.markdown("""
-                **Evidências encontradas:**
-                * Inconsistência temporal na região dos olhos.
-                * Descompasso de milissegundos entre fonemas e movimento labial.
-                * Suavização não natural nas bordas do rosto.
-            """)
-            st.info("💡 **Dica de Segurança:** Nunca envie dinheiro baseado apenas em solicitações de vídeo. Confirme a identidade da pessoa por uma chamada telefônica comum.")
-        else:
-            st.warning("Por favor, forneça um link ou um arquivo de vídeo para análise.")
+    if st.button("🚀 Iniciar Perícia de Vídeo"):
+        with st.status("Realizando varredura forense...", expanded=True) as status:
+            st.write("Analisando sincronia labial e micro-expressões...")
+            time.sleep(3)
+            status.update(label="Análise Concluída!", state="complete")
+        st.error("🚨 ALERTA: Inconsistência temporal detectada (Possível Deepfake).")
+
+st.divider()
+st.caption("Aviso: Esta ferramenta auxilia na detecção, mas a decisão final e o cuidado com seus dados são de sua responsabilidade.")

@@ -6,18 +6,27 @@ import time
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
 
 def consultar_detector_ia(texto):
-    """Função centralizada para consulta à API do Hugging Face"""
-    urls = [
+    """Tenta dois modelos diferentes para garantir que um responda"""
+    # Modelo 1 (Roberta Clássica) e Modelo 2 (OpenAI Detector)
+    modelos = [
         "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta",
-        "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta"
+        "https://api-inference.huggingface.co/models/roberta-base-openai-detector"
     ]
     
-    # Limpeza rigorosa do Token
-    token = st.secrets.get("HF_TOKEN", "").replace('"', '').replace("'", "").replace("|", "").strip()
+    token = st.secrets.get("HF_TOKEN", "").replace('"', '').replace("'", "").strip()
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"inputs": texto, "options": {"wait_for_model": True}}
     
-    if not token:
-        st.error("Token não encontrado nas Secrets do Streamlit!")
-        return None
+    for url in modelos:
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=20)
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                return {"erro": "Token Inválido ou Incompleto (verifique o tamanho)"}
+        except:
+            continue
+    return None
         
     headers = {"Authorization": f"Bearer {token}"}
     payload = {

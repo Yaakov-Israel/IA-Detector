@@ -2,19 +2,43 @@ import streamlit as st
 import requests
 import time
 
-# Configuração da página
-st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
-
-# --- FUNÇÃO DE CONEXÃO COM A IA (HUGGING FACE) ---
 def consultar_detector_ia(texto):
+    # URL atualizada para o sistema de Router do Hugging Face
     API_URL = "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta"
     
-    # O .strip() remove espaços acidentais no início ou fim do token
     token = st.secrets.get("HF_TOKEN", "").strip()
     
     if not token:
-        st.error("Token não encontrado nas Secrets! Verifique o nome HF_TOKEN.")
+        st.error("Token não encontrado nas Secrets do Streamlit!")
         return None
+        
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "inputs": texto,
+        "options": {"wait_for_model": True, "use_cache": False}
+    }
+    
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=20)
+        
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 401:
+            st.error("Erro 401: Token Inválido. Verifique se as permissões 'Inference' estão marcadas no HF.")
+            return None
+        elif response.status_code == 410:
+            # Tenta uma URL alternativa se o endpoint principal der 'Gone'
+            ALT_URL = "https://router.huggingface.co/hf-inference/models/Hello-SimpleAI/chatgpt-detector-roberta"
+            response = requests.post(ALT_URL, headers=headers, json=payload, timeout=20)
+            return response.json() if response.status_code == 200 else None
+        else:
+            st.error(f"Erro {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        st.error(f"Falha na comunicação: {e}")
+        return None
+
+# O restante do seu código (Interface, Abas, etc.) continua igual
         
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"inputs": texto, "options": {"wait_for_model": True}}

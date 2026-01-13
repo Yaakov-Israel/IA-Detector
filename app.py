@@ -9,36 +9,27 @@ st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
 
 
 def consultar_detector_ia(texto):
-    """Tenta dois modelos diferentes e trata erros de conexão/token"""
+    """Tenta modelos diferentes e gerencia o tempo de carregamento"""
     modelos = [
-        "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta",
-        "https://api-inference.huggingface.co/models/roberta-base-openai-detector"
+        "https://api-inference.huggingface.co/models/roberta-base-openai-detector",
+        "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta"
     ]
 
-    # Busca e limpa o token das Secrets
     token = st.secrets.get("HF_TOKEN", "").replace(
-        '"', '').replace("'", "").replace("|", "").strip()
-
-    if not token:
-        st.error("Token não encontrado nas Secrets! Verifique o nome HF_TOKEN.")
-        return None
-
+        '"', '').replace("'", "").strip()
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"inputs": texto, "options": {"wait_for_model": True}}
 
     for url in modelos:
         try:
             response = requests.post(
-                url, headers=headers, json=payload, timeout=20)
+                url, headers=headers, json=payload, timeout=15)
             if response.status_code == 200:
                 return response.json()
-            elif response.status_code == 401:
-                st.error(
-                    "Erro 401: Token Inválido. Verifique se copiou o código hf_ completo.")
-                return None
-        except Exception as e:
-            continue  # Tenta o próximo modelo se este falhar
-
+            elif response.status_code == 503:
+                return {"erro": "O servidor da IA está aquecendo. Tente novamente em 20 segundos."}
+        except:
+            continue
     return None
 
 
@@ -61,7 +52,6 @@ with aba_texto:
                 resultado = consultar_detector_ia(entrada_texto)
                 if resultado and isinstance(resultado, list):
                     try:
-                        # Extrai a previsão do primeiro modelo que respondeu
                         dados = resultado[0]
                         melhor_previsao = max(dados, key=lambda x: x['score'])
                         label = melhor_previsao['label']
@@ -83,16 +73,58 @@ with aba_texto:
 
 # --- ABA DE IMAGEM ---
 with aba_imagem:
-    st.header("Análise de Imagem")
-    foto = st.file_uploader("Suba a foto suspeita",
-                            type=['jpg', 'png', 'jpeg'])
-    if foto:
-        st.image(foto, caption="Imagem carregada")
-        if st.button("🔬 Escanear Pixels"):
-            with st.status("Procurando artefatos de IA...") as s:
-                time.sleep(2)
-                s.update(label="Varredura concluída!", state="complete")
-            st.info("Em breve: Integração total com detector de difusão.")
+    st.header("🔬 Perícia de Imagem")
+    st.write("Analise o DNA do arquivo ou de um link para buscar rastros de edição.")
+
+    metodo_img = st.radio("Escolha a origem da imagem:", [
+                          "Upload de Arquivo", "Link da Web"], key="origem_img")
+
+    img_para_analise = None
+
+    if metodo_img == "Upload de Arquivo":
+        arquivo = st.file_uploader("Suba a foto suspeita", type=[
+                                   'jpg', 'png', 'jpeg'])
+        if arquivo:
+            img_para_analise = arquivo
+    else:
+        url_img = st.text_input(
+            "Cole a URL da imagem (ex: https://site.com/foto.jpg):")
+        if url_img:  # Ajustado aqui de url_input para url_img
+            try:
+                response = requests.get(url_img, stream=True, timeout=10)
+                if response.status_code == 200:
+                    from io import BytesIO
+                    img_para_analise = BytesIO(response.content)
+                    st.success("Imagem do link carregada!")
+                else:
+                    st.error("Não foi possível acessar a imagem pelo link.")
+            except Exception as e:
+                st.error(f"Erro ao carregar link: {e}")
+
+    if img_para_analise:
+        st.image(img_para_analise, caption="Imagem para análise",
+                 use_container_width=True)
+
+        if st.button("🔍 Realizar Escaneamento Forense", key="btn_forense_img"):
+            with st.status("Extraindo Metadados EXIF...") as s:
+                from PIL import Image
+                from PIL.ExifTags import TAGS
+
+                time.sleep(1)
+                img = Image.open(img_para_analise)
+                info = img.getexif()
+
+                if info:
+                    st.subheader("Dados Encontrados (DNA do Arquivo):")
+                    for tag_id in info:
+                        tag = TAGS.get(tag_id, tag_id)
+                        dado = info.get(tag_id)
+                        st.write(f"**{tag}**: {dado}")
+                    s.update(label="Análise Concluída!", state="complete")
+                else:
+                    st.warning(
+                        "⚠️ Nenhum metadado encontrado. Comum em IA, prints ou redes sociais.")
+                    s.update(label="Varredura finalizada.", state="complete")
 
 # --- ABA DE VÍDEO ---
 with aba_video:
@@ -102,8 +134,8 @@ with aba_video:
                             "Link da Rede Social", "Upload de Arquivo"])
 
     if metodo_video == "Link da Rede Social":
-        url_input = st.text_input(
-            "Cole o link do vídeo:", placeholder="https://...")
+        url_input_video = st.text_input(
+            "Cole o link do vídeo:", placeholder="https://...", key="url_video")
     else:
         video_file = st.file_uploader("Envie o vídeo (.mp4)", type=['mp4'])
 

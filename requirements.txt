@@ -1,8 +1,7 @@
-streamlit
-pillow
+moviepy
 numpy
 opencv-python-headless
-moviepy
-yt-dlp
-opencv-python-headless
+Pillow
 requests
+streamlit
+yt-dlp

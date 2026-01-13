@@ -7,18 +7,30 @@ st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️")
 
 # --- FUNÇÃO DE CONEXÃO COM A IA (HUGGING FACE) ---
 def consultar_detector_ia(texto):
-    # Modelo especializado em detectar textos gerados por GPT e outros LLMs
     API_URL = "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta"
     
-    # Busca o token que você salvou no Secrets do Streamlit
-    headers = {"Authorization": f"Bearer {st.secrets['HF_TOKEN']}"}
+    # O .strip() remove espaços acidentais no início ou fim do token
+    token = st.secrets.get("HF_TOKEN", "").strip()
     
-    payload = {"inputs": texto}
-    response = requests.post(API_URL, headers=headers, json=payload)
+    if not token:
+        st.error("Token não encontrado nas Secrets! Verifique o nome HF_TOKEN.")
+        return None
+        
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"inputs": texto, "options": {"wait_for_model": True}}
     
-    if response.status_code == 200:
-        return response.json()
-    else:
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=15)
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 401:
+            st.error("Erro 401: Token Inválido. Confira se copiou o código hf_ completo.")
+            return None
+        else:
+            st.error(f"Erro {response.status_code}: {response.text}")
+            return None
+    except Exception as e:
+        st.error(f"Falha na requisição: {e}")
         return None
 
 # --- INTERFACE DO USUÁRIO ---

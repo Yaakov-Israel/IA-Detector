@@ -175,4 +175,4 @@ with aba_vid:
 
 # --- 5. RODAPÉ (COM AVISO ÉTICO) ---
 st.divider()
-st.caption("IA-Detector v1.6.2 | © Yaakov Israel | Aviso: Este app lê metadados públicos para fins de perícia.")
+st.caption("IA-Detector v1.6.2 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

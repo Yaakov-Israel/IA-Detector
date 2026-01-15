@@ -1,10 +1,11 @@
 import streamlit as st
 import requests
 import time
+import cv2  # Para análise de vídeo
+import numpy as np # Para cálculos matemáticos
 from PIL import Image
 from PIL.ExifTags import TAGS
 from io import BytesIO
-
 # Configuração da página - "Vestindo a roupa de gala"
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
 

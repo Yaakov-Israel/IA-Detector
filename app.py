@@ -8,6 +8,9 @@ from PIL.ExifTags import TAGS
 from io import BytesIO
 import os
 
+# --- INICIALIZAÇÃO DO DETECTOR DE ROSTOS ---
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
 # --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
 
@@ -42,13 +45,15 @@ def realizar_pericia_video(video_file):
         if ret:
             cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
+            
             # --- NOVO SENSOR ANATÔMICO ---
             faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
             
-            # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é mais lisa)
+            # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é MUITO lisa)
             limite_textura = 110 if len(faces) > 0 else 75
             
-            if score_textura < limite_textura or score_cores < 40:
+            # Se a textura for menor que o limite, marcamos como suspeito
+            if score_textura < limite_textura:
                 frames_suspeitos += 1
     cap.release()
     if os.path.exists("temp_investigacao.mp4"):

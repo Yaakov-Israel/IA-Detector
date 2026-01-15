@@ -42,9 +42,14 @@ def realizar_pericia_video(video_file):
         if ret:
             cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
-            if score_textura < 35 or (score_textura < 90 and score_cores < 55):
+            # --- NOVO SENSOR ANATÔMICO ---
+            faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
+            
+            # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é mais lisa)
+            limite_textura = 110 if len(faces) > 0 else 75
+            
+            if score_textura < limite_textura or score_cores < 40:
                 frames_suspeitos += 1
-
     cap.release()
     if os.path.exists("temp_investigacao.mp4"):
         os.remove("temp_investigacao.mp4")

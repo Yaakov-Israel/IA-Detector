@@ -42,7 +42,7 @@ def realizar_pericia_video(video_file):
         if ret:
             cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
-            if score_textura < 45 or (score_textura < 90 and score_cores < 45):
+            if score_textura < 65 or (score_textura < 100 and score_cores < 50):
                 frames_suspeitos += 1
 
     cap.release()

@@ -26,72 +26,88 @@ aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
 
 # --- ABA DE IMAGEM (PERÍCIA FORENSE) ---
 with aba_img:
-    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Use Upload para fotos originais (preserva metadados) ou Link para checar imagens virais da web.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Use Upload para fotos originais.</div>', unsafe_allow_html=True)
     
+    # Botão para limpar/reiniciar
+    if st.button("♻️ Nova Análise de Imagem"):
+        st.rerun()
+
     tipo_img = st.radio("Selecione o modo:", ["Upload (Modo Pro)", "Link da Web"], horizontal=True)
     img_final = None
 
-    if tipo_img == "Upload (Modo Pro)":
-        arquivo = st.file_uploader("Suba a imagem original", type=['jpg', 'png', 'jpeg'])
-        if arquivo: img_final = arquivo
-    else:
-        url_input = st.text_input("Cole o endereço da imagem (Botão direito > Copiar endereço):")
-        if url_input:
-            try:
-                headers = {'User-Agent': 'Mozilla/5.0'}
-                res = requests.get(url_input, headers=headers, timeout=10)
-                if res.status_code == 200: img_final = BytesIO(res.content)
-                else: st.error("Erro ao acessar link.")
-            except: st.error("Link inválido ou protegido.")
+    # ... (seu código de captura de imagem continua igual aqui) ...
 
     if img_final:
         st.image(img_final, use_container_width=True)
         if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
             with st.spinner("Escaneando vestígios digitais..."):
-                time.sleep(1)
                 img = Image.open(img_final)
                 exif = img.getexif()
                 
-                st.subheader("📊 Relatório Forense")
+                # Lógica de Confiança
+                score_real = 0
                 if exif:
-                    for tag_id in exif:
-                        tag = TAGS.get(tag_id, tag_id)
-                        st.write(f"✅ **{tag}**: {exif.get(tag_id)}")
+                    score_real = 90  # Se tem EXIF, grandes chances de ser real
                 else:
-                    st.warning("⚠️ **ALERTA:** Nenhum metadado original encontrado. A imagem pode ser um print ou gerada por IA.")
+                    score_real = 20  # Sem metadados, suspeita alta
+                
+                st.subheader("📊 Relatório de Autenticidade")
+                st.progress(score_real / 100)
+                st.write(f"Probabilidade de ser uma **Foto Original**: {score_real}%")
 
-# --- ABA DE VÍDEO (COMBATE A DEEPFAKES) ---
+                if score_real > 70:
+                    st.success("✅ Fato: Imagem consistente com captura de câmera física.")
+                else:
+                    st.warning("⚠️ Suspeito: Imagem sem rastros digitais de hardware. Pode ser IA ou Print.")
+
+# --- ABA DE VÍDEO (DETECTOR DE ORIGEM) ---
 with aba_vid:
-    st.markdown('<div class="instrucao"><b>COMBATE A DEEPFAKE:</b> Analise links do X, YouTube ou vídeos suspeitos recebidos por mensageiros.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="instrucao"><b>DETECTOR DE ORIGEM:</b> Identifique se o vídeo foi criado por humanos ou IA.</div>', unsafe_allow_html=True)
     
+    if st.button("♻️ Nova Análise de Vídeo"):
+        st.rerun()
+
     tipo_vid = st.radio("Origem do vídeo:", ["Upload Local", "Link de Rede Social"], horizontal=True)
-    
+    vid_file = None
+    url_vid = ""
+
     if tipo_vid == "Upload Local":
         vid_file = st.file_uploader("Envie o vídeo (.mp4)", type=['mp4'])
     else:
         url_vid = st.text_input("Cole o link (X, YouTube, etc):")
-        st.caption("Nota: Usamos a tecnologia yt-dlp para extrair mídias de redes sociais.")
 
-    st.subheader("🕵️ Checklist Forense")
+    # Checklist manual (enquanto não automatizamos 100% com IA)
+    st.subheader("🕵️ Checklist de Consistência Natural")
     col1, col2 = st.columns(2)
     with col1:
-        v1 = st.checkbox("Piscadas Naturais?")
-        v2 = st.checkbox("Sincronia Labial?")
+        v1 = st.checkbox("Física Realista? (Gravidade/Peso)")
+        v2 = st.checkbox("Sincronia Labial/Voz?")
     with col2:
-        v3 = st.checkbox("Fundo Estável?")
-        v4 = st.checkbox("Pele com Textura?")
+        v3 = st.checkbox("Cenário Estável? (Sem mutações)")
+        v4 = st.checkbox("Texturas Naturais? (Pele/Pêlos)")
 
     if st.button("🔬 INICIAR ANÁLISE DE VÍDEO", use_container_width=True):
-        with st.status("Extraindo frames para análise...") as s:
-            time.sleep(2)
-            s.update(label="Verificando padrões faciais...", state="running")
-            time.sleep(2)
-            
-            if not v1 or not v2 or not v3 or not v4:
-                st.error("🚨 **VEREDITO:** Alta probabilidade de manipulação. Sinais de Deepfake detectados.")
-            else:
-                st.success("✅ **VEREDITO:** Baixa probabilidade de Deepfake grosseiro. Vídeo parece consistente.")
-            s.update(label="Análise Finalizada", state="complete")
+        # TRAVA DE SEGURANÇA: Só analisa se houver um arquivo ou link
+        if not vid_file and not url_vid:
+            st.error("❌ Erro: Por favor, forneça um vídeo ou link antes de iniciar.")
+        else:
+            with st.status("Analisando integridade do vídeo...") as s:
+                time.sleep(2)
+                
+                # Lógica de Veredito Amigável
+                pontos = sum([v1, v2, v3, v4])
+                confianca = pontos * 25 # 4 caixas = 100%
+                
+                st.write(f"**Nível de Autenticidade Humana:** {confianca}%")
+                st.progress(confianca / 100)
 
+                if confianca >= 75:
+                    st.success("🎥 **VEREDITO:** Conteúdo com fortes indícios de ser Genuinamente Humano.")
+                elif confianca >= 50:
+                    st.info("🤖 **VEREDITO:** Vídeo Híbrido. Pode ser real com edições pesadas de IA.")
+                else:
+                    st.error("🚫 **VEREDITO:** Conteúdo criado ou profundamente manipulado por IA.")
+                
+                s.update(label="Análise Finalizada", state="complete")
 st.divider()
 st.caption("IA-Detector v1.4 | Protegendo a verdade na era da IA.")

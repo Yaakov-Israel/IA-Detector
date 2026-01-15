@@ -163,7 +163,7 @@ with aba_vid:
                 
                 # Se a máquina detectar textura "lisa" de IA, soma 20
                 if dados['anomalias_textura'] > 5: 
-                    ia_score += 40
+                    ia_score += 60
                 
                 ia_score = min(ia_score, 100)
                 humano_score = 100 - ia_score

@@ -53,7 +53,7 @@ def realizar_pericia_video(video_file):
             limite_textura = 280 if len(faces) > 0 else 250
             # --- LINHA DE DIAGNÓSTICO TEMPORÁRIA ---
             # --- DIAGNÓSTICO NA TELA DO APP ---
-            st.write(f"🔍 Frame {i}: Textura={score_textura:.2f} | Rostos={len(faces)} | Limite={limite_textura}")
+            
             # Se a textura for menor que o limite, marcamos como suspeito
             if score_textura < limite_textura:
                 frames_suspeitos += 1

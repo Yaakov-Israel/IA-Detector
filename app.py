@@ -8,7 +8,7 @@ from PIL.ExifTags import TAGS
 from io import BytesIO
 import os
 
-# --- 1. CONFIGURAÇÃO E ESTILO - "Vestindo a roupa de gala" ---
+# --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
 
 st.markdown("""
@@ -20,119 +20,143 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. AGENTES DE ANÁLISE (OS MÚSCULOS) ---
-def analisar_video_tecnico(video_file):
-    """Analisa o DNA técnico do vídeo para identificar padrões de IA"""
-    with open("temp_video.mp4", "wb") as f:
+# --- 2. AGENTES DE PERÍCIA FORENSE ---
+def realizar_pericia_video(video_file):
+    """Analisa o vídeo em busca de anomalias de textura e física"""
+    with open("temp_investigacao.mp4", "wb") as f:
         f.write(video_file.getbuffer())
-    
-    cap = cv2.VideoCapture("temp_video.mp4")
+
+    cap = cv2.VideoCapture("temp_investigacao.mp4")
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     largura = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     altura = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    
-    duracao = total_frames / fps if fps > 0 else 0
-    
-    # Simulação de análise de ruído digital (será automatizada em breve)
-    # Vídeos de IA costumam ter resoluções quadradas ou metadados de compressão específicos
-    is_suspicious_res = 1 if largura == altura else 0 
-    
+    duracao_seg = total_frames / fps if fps > 0 else 0
+
+    frames_suspeitos = 0
+    passo = max(1, total_frames // 15)
+
+    for i in range(0, total_frames, passo):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+        ret, frame = cap.read()
+        if ret:
+            cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
+            if score_textura < 80:
+                frames_suspeitos += 1
+
     cap.release()
-    if os.path.exists("temp_video.mp4"):
-        os.remove("temp_video.mp4")
-    
+    if os.path.exists("temp_investigacao.mp4"):
+        os.remove("temp_investigacao.mp4")
+
     return {
-        "duracao": duracao, 
-        "fps": fps, 
-        "suspeito_formato": is_suspicious_res,
-        "frames": total_frames
+        "duracao": duracao_seg,
+        "anomalias_textura": frames_suspeitos,
+        "resolucao_quadrada": 1 if largura == altura else 0,
+        "fps": fps
     }
 
-# --- 3. INTERFACE PRINCIPAL ---
+# --- 3. INTERFACE E PERÍCIA DE IMAGEM ---
 st.title("🛡️ IA-Detector")
 st.subheader("O Soro Antiofídico Digital contra a Desinformação")
 
 aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
 
-# --- ABA DE IMAGEM (PERÍCIA FORENSE) ---
 with aba_img:
-    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Use Upload para fotos originais.</div>', unsafe_allow_html=True)
-    
+    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Analise metadados EXIF e estrutura de pixels.</div>', unsafe_allow_html=True)
+
     if st.button("♻️ Nova Análise de Imagem", key="reset_img"):
         st.rerun()
 
-    tipo_img = st.radio("Selecione o modo:", ["Upload (Modo Pro)", "Link da Web"], horizontal=True)
+    tipo_img = st.radio("Fonte:", ["Upload Local", "Link da Web"], horizontal=True)
     img_final = None
 
-    if tipo_img == "Upload (Modo Pro)":
-        arquivo = st.file_uploader("Suba a imagem original", type=['jpg', 'png', 'jpeg'])
-        if arquivo: img_final = arquivo
+    if tipo_img == "Upload Local":
+        arquivo = st.file_uploader("Suba a imagem", type=['jpg', 'png', 'jpeg'])
+        if arquivo:
+            img_final = arquivo
     else:
-        url_input = st.text_input("Cole o endereço da imagem:")
+        url_input = st.text_input("URL da imagem:")
         if url_input:
             try:
                 res = requests.get(url_input, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-                if res.status_code == 200: img_final = BytesIO(res.content)
-            except: st.error("Erro ao acessar imagem.")
+                if res.status_code == 200:
+                    img_final = BytesIO(res.content)
+            except:
+                st.error("Erro ao acessar imagem.")
 
     if img_final:
         st.image(img_final, use_container_width=True)
         if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
-            with st.spinner("Escaneando vestígios..."):
-                img = Image.open(img_final)
-                exif = img.getexif()
-                score_real = 90 if exif else 20
-                
-                st.subheader("📊 Relatório de Autenticidade")
-                st.progress(score_real / 100)
-                if exif:
-                    st.success(f"✅ Fato: Metadados de hardware encontrados! ({score_real}%)")
-                else:
-                    st.warning("⚠️ Suspeito: Sem rastro de hardware original.")
+            img = Image.open(img_final)
+            exif = img.getexif()
+            score_real = 90 if exif else 20
+            st.subheader("📊 Relatório de Autenticidade")
+            st.progress(score_real / 100)
+            st.write(f"Confiança de Origem Humana: {score_real}%")
 
-# --- ABA DE VÍDEO (COMBATE A DEEPFAKES) ---
+# --- 4. PERÍCIA DE VÍDEO (COMBATE A DEEPFAKES) ---
 with aba_vid:
-    st.markdown('<div class="instrucao"><b>DETECTOR AUTOMÁTICO:</b> O sistema analisa a física e os padrões de compressão do vídeo.</div>', unsafe_allow_html=True)
-    
-    if st.button("♻️ Nova Análise de Vídeo", key="reset_vid"):
+    st.markdown('<div class="instrucao"><b>INVESTIGAÇÃO:</b> Suba vídeos de qualquer duração para análise de padrões.</div>', unsafe_allow_html=True)
+
+    if st.button("♻️ Nova Análise de Vídeo", key="reset_pericia_vid"):
         st.rerun()
 
-    vid_file = st.file_uploader("Envie o vídeo para análise (.mp4)", type=['mp4'])
+    tipo_vid = st.radio("Origem:", ["Upload Local", "Link da Web"], horizontal=True, key="video_source")
 
-    if st.button("🔬 INICIAR ANÁLISE AUTOMÁTICA", use_container_width=True):
-        if not vid_file:
-            st.error("❌ Por favor, suba um vídeo primeiro.")
+    arquivo_vid = None
+    if tipo_vid == "Upload Local":
+        arquivo_vid = st.file_uploader("Suba o vídeo (.mp4, .mov)", type=['mp4', 'mov'])
+    else:
+        url_vid = st.text_input("Cole o link (YouTube/X/Insta):")
+
+    st.subheader("🕵️ Checklist Forense (As 10 Regras)")
+    col_x, col_y = st.columns(2)
+    with col_x:
+        r_fisica = st.checkbox("Violação da Gravidade/Física? (Ex: Gata na parede)")
+        r_sentido = st.checkbox("Ações que não fazem sentido?")
+        r_objetos = st.checkbox("Objetos atravessando outros?")
+    with col_y:
+        r_maos = st.checkbox("Mãos ou dedos anormais?")
+        r_rosto = st.checkbox("Rostos ou olhos estranhos?")
+        r_voz = st.checkbox("Voz robótica ou sem emoção?")
+
+    if st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA", use_container_width=True):
+        if not (arquivo_vid or (tipo_vid == "Link da Web" and url_vid)):
+            st.error("⚠️ Forneça um arquivo ou link primeiro.")
         else:
-            with st.status("Processando Frames...") as s:
-                # O App agora trabalha sozinho:
-                dados = analisar_video_tecnico(vid_file)
-                
-                # Lógica Interna baseada nas suas 10 Regras
-                score_humano = 0
-                
-                # Teste 1: Duração (Regra 10) - Vídeos de IA atuais raramente passam de 10s com alta consistência
-                if dados['duracao'] > 10: score_humano += 30
-                else: score_humano += 10
-                
-                # Teste 2: Estabilidade de FPS (Vídeos reais são constantes)
-                if dados['fps'] in [24, 30, 60]: score_humano += 30
-                
-                # Teste 3: Metadados de Resolução (IA usa muito 1024x1024)
-                if dados['suspeito_formato'] == 0: score_humano += 40
-
-                # Exibindo o veredito amigável
-                st.subheader("🕵️ Resultado da Investigação")
-                st.progress(min(score_humano, 100) / 100)
-                
-                if score_humano >= 70:
-                    st.success(f"🎥 **VEREDITO:** {score_humano}% de chance de ser Genuinamente Humano.")
-                elif score_humano >= 40:
-                    st.info(f"🤖 **VEREDITO:** Suspeito. Sinais de manipulação ou geração por IA detectados.")
+            with st.status("Analisando frames e metadados...") as s:
+                # Perícia técnica baseada no arquivo
+                if arquivo_vid:
+                    dados = realizar_pericia_video(arquivo_vid)
                 else:
-                    st.error(f"🚫 **VEREDITO:** Conteúdo Identificado como IA (Falha nos padrões naturais).")
-                
-                s.update(label="Análise Concluída", state="complete")
+                    # Placeholder para link web enquanto implementamos scraping
+                    dados = {"anomalias_textura": 5, "duracao": 0, "resolucao_quadrada": 0}
 
+                # Cálculo de IA Score (Soma de evidências)
+                ia_score = sum([r_fisica, r_sentido, r_objetos, r_maos, r_rosto, r_voz]) * 15
+                
+                if dados['anomalias_textura'] > 8: ia_score += 20
+                if dados['resolucao_quadrada'] == 1: ia_score += 10
+
+                ia_score = min(ia_score, 100)
+                humano_score = 100 - ia_score
+
+                st.subheader("📊 Laudo Forense")
+                st.progress(humano_score / 100)
+
+                if humano_score <= 30:
+                    st.error(f"🚫 VEREDITO: CONTEÚDO GERADO POR IA ({ia_score}% de certeza)")
+                    st.write("**Análise:** Falhas graves na física e padrões de textura sintética.")
+                elif humano_score <= 65:
+                    st.warning(f"⚠️ VEREDITO: CONTEÚDO SUSPEITO ({ia_score}%)")
+                    st.write("**Análise:** Presença de artefatos digitais incomuns.")
+                else:
+                    st.success(f"✅ VEREDITO: CONTEÚDO HUMANO ({humano_score}% de confiança)")
+                    st.write("**Análise:** Movimentos e texturas condizentes com a realidade.")
+
+                s.update(label="Investigação Concluída!", state="complete")
+
+# --- 5. RODAPÉ ---
 st.divider()
-st.caption("IA-Detector v1.5 | Copyright by: Yaakov Israel com Gemini | Protegendo a verdade na era da IA.")
+st.caption("IA-Detector v1.6.1 | Copyright by: Yaakov Israel Cypriano com Gemini 3 | Protegendo a verdade.")

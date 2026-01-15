@@ -51,7 +51,8 @@ def realizar_pericia_video(video_file):
             
             # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é MUITO lisa)
             limite_textura = 110 if len(faces) > 0 else 75
-            
+            # --- LINHA DE DIAGNÓSTICO TEMPORÁRIA ---
+            print(f"DEBUG -> Frame: {i} | Textura: {score_textura:.2f} | Rostos: {len(faces)}")
             # Se a textura for menor que o limite, marcamos como suspeito
             if score_textura < limite_textura:
                 frames_suspeitos += 1

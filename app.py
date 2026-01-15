@@ -50,7 +50,7 @@ def realizar_pericia_video(video_file):
             faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
             
             # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é MUITO lisa)
-            limite_textura = 110 if len(faces) > 0 else 75
+            limite_textura = 280 if len(faces) > 0 else 250
             # --- LINHA DE DIAGNÓSTICO TEMPORÁRIA ---
             # --- DIAGNÓSTICO NA TELA DO APP ---
             st.write(f"🔍 Frame {i}: Textura={score_textura:.2f} | Rostos={len(faces)} | Limite={limite_textura}")

@@ -173,13 +173,13 @@ with aba_vid:
                 
                 if humano_score <= 35:
                     st.error(f"🚫 VEREDITO: CONTEÚDO IDENTIFICADO COMO IA ({ia_score}%)")
-                    st.write("**Análise:** Falhas graves na física e padrões sintéticos detectados.")
+                    st.write("**Análise:** Inconsistência crítica na micro-textura orgânica e padrões de ruído artificial detectados.")
                 elif humano_score <= 65:
                     st.warning(f"⚠️ VEREDITO: CONTEÚDO SUSPEITO ({ia_score}%)")
-                    st.write("**Análise:** Manipulação provável. Inconsistência de metadados.")
+                    st.write("**Análise:** Anomalias na densidade de detalhes superficiais sugerem manipulação sintética.")
                 else:
                     st.success(f"✅ VEREDITO: CONTEÚDO GENUÍNO ({humano_score}%)")
-                    st.write("**Análise:** Padrões condizentes com filmagem real.")
+                    st.write("**Análise:** Padrões de textura e frequência de imagem condizentes com captação orgânica real.")
                 
                 s.update(label="Perícia Concluída!", state="complete")
         else:

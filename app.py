@@ -161,9 +161,23 @@ with aba_vid:
                 # Cálculo de IA Score (Peso do Humano + Máquina)
                 ia_score = sum([r_fisica, r_sentido, r_objetos, r_maos, r_rosto, r_voz]) * 15
                 
-                # Se a máquina detectar textura "lisa" de IA, soma 20
+                # Se a máquina detectar textura "lisa" de IA, aplica pesos
+                if dados['anomalias_textura'] > 5:
+                    ia_score += 60
+                    # Xeque-mate: Se a máquina detectou IA E o humano confirmou físico/rosto
+                    if r_fisica or r_rosto:
+                        ia_score = 100
+                    # Se a máquina detectar textura "lisa" de IA, soma 60
                 if dados['anomalias_textura'] > 5: 
                     ia_score += 60
+                
+                # --- NOVO: O MULTIPLICADOR DE CERTEZA ---
+                if dados['anomalias_textura'] > 5 and (r_fisica or r_rosto):
+                    ia_score = 100 
+                # ----------------------------------------
+
+                ia_score = min(ia_score, 100)
+                humano_score = 100 - ia_score
                 
                 ia_score = min(ia_score, 100)
                 humano_score = 100 - ia_score

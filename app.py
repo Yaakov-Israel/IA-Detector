@@ -141,47 +141,16 @@ with aba_vid:
         url_vid = st.text_input("Cole o link:")
         st.info("A análise de links externos será habilitada na v1.7.")
 
-    st.subheader("🕵️ Checklist Forense (As 10 Regras)")
-    c1, c2 = st.columns(2)
-    with c1:
-        r_fisica = st.checkbox("Violação da Gravidade? (Ex: Gata na parede)")
-        r_sentido = st.checkbox("Ações que não fazem sentido?")
-        r_objetos = st.checkbox("Objetos se atravessando?")
-    with c2:
-        r_maos = st.checkbox("Mãos ou dedos anormais?")
-        r_rosto = st.checkbox("Rostos ou olhos estranhos?")
-        r_voz = st.checkbox("Voz robótica ou sem emoção?")
-
     if st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA", use_container_width=True):
         if tipo_vid == "Upload Local" and arquivo_vid is not None:
             with st.status("Processando perícia técnica...") as s:
                 # Chama a função do Bloco 2
                 dados = realizar_pericia_video(arquivo_vid)
                 
-                # Cálculo de IA Score (Peso do Humano + Máquina)
-                ia_score = sum([r_fisica, r_sentido, r_objetos, r_maos, r_rosto, r_voz]) * 15
-                
-                # Se a máquina detectar textura "lisa" de IA, aplica pesos
-                if dados['anomalias_textura'] > 5:
-                    ia_score += 60
-                    # Xeque-mate: Se a máquina detectou IA E o humano confirmou físico/rosto
-                    if r_fisica or r_rosto:
-                        ia_score = 100
-                    # Se a máquina detectar textura "lisa" de IA, soma 60
-                if dados['anomalias_textura'] > 5: 
-                    ia_score += 60
-                
-                # --- NOVO: O MULTIPLICADOR DE CERTEZA ---
-                if dados['anomalias_textura'] > 5 and (r_fisica or r_rosto):
-                    ia_score = 100 
-                # ----------------------------------------
-
-                ia_score = min(ia_score, 100)
+                # --- REINSTALANDO A LÓGICA DA MÁQUINA (Necessário para não dar erro) ---
+                ia_score = 100 if dados['anomalias_textura'] > 12 else (75 if dados['anomalias_textura'] > 5 else 0)
                 humano_score = 100 - ia_score
                 
-                ia_score = min(ia_score, 100)
-                humano_score = 100 - ia_score
-
                 st.subheader("📊 Laudo Forense")
                 st.progress(humano_score / 100)
                 
@@ -198,7 +167,6 @@ with aba_vid:
                 s.update(label="Perícia Concluída!", state="complete")
         else:
             st.error("❌ Erro: Por favor, selecione e suba um arquivo de vídeo primeiro.")
-
 # --- 5. RODAPÉ (COM AVISO ÉTICO) ---
 st.divider()
 st.caption("IA-Detector v1.6.2 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

@@ -191,7 +191,7 @@ with aba_vid:
                     # --- CHAMA A SUA FUNÇÃO QUE JÁ FUNCIONA ---
                     dados = realizar_pericia_video(video_para_analise)
 
-               st.error("❌ Erro: Por favor, selecione e suba um arquivo de vídeo primeiro.")
+            st.error("❌ Erro: Por favor, selecione e suba um arquivo de vídeo primeiro.")
 # --- 5. RODAPÉ (COM AVISO ÉTICO) ---
 st.divider()
 st.caption("IA-Detector v1.6.2 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

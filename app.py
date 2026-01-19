@@ -28,16 +28,10 @@ st.markdown("""
 # --- 2. AGENTES DE PERÍCIA FORENSE ---
 def realizar_pericia_video(video_file):
     """Analisa o vídeo em busca de anomalias de textura e física"""
-    caminho_final = ""
-    
-    if isinstance(video_file, str):
-        caminho_final = video_file
-    else:
-        caminho_final = "temp_investigacao.mp4"
-        with open(caminho_final, "wb") as f:
-            f.write(video_file.getbuffer())
+    with open("temp_investigacao.mp4", "wb") as f:
+        f.write(video_file.getbuffer())
 
-    cap = cv2.VideoCapture(caminho_final)
+    cap = cv2.VideoCapture("temp_investigacao.mp4")
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     largura = cap.get(cv2.CAP_PROP_FRAME_WIDTH)

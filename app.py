@@ -126,6 +126,18 @@ with aba_img:
             else:
                 st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
 
+# --- FUNÇÃO AUXILIAR PARA LINKS (NOVA) ---
+def baixar_video_temporario(url):
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': os.path.join(tempfile.gettempdir(), '%(id)s.%(ext)s'),
+        'quiet': True,
+        'no_warnings': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        return ydl.prepare_filename(info)
+
 # --- 4. PERÍCIA DE VÍDEO (CONSERTADO E COMPLETO) ---
 with aba_vid:
     st.markdown('<div class="instrucao"><b>INVESTIGAÇÃO:</b> Suba vídeos (.mp4) para análise de padrões físicos e digitais.</div>', unsafe_allow_html=True)

@@ -139,6 +139,10 @@ def baixar_video_temporario(url):
         'outtmpl': os.path.join(tempfile.gettempdir(), '%(id)s.%(ext)s'),
         'quiet': True,
         'no_warnings': True,
+        # O "disfarce" para evitar o Erro 403:
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)

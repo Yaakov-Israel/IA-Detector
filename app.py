@@ -10,10 +10,8 @@ import os
 import yt_dlp
 import tempfile
 
-# --- INICIALIZAÇÃO DO DETECTOR DE ROSTOS ---
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-# --- 1. CONFIGURAÇÃO E ESTILO ---
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
 
 st.markdown("""
@@ -25,11 +23,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. AGENTES DE PERÍCIA FORENSE ---
+# --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
 def realizar_pericia_video(video_file):
     """Analisa o vídeo em busca de anomalias de textura e física"""
     caminho_final = ""
-    
+
     if isinstance(video_file, str):
         caminho_final = video_file
     else:
@@ -53,19 +51,16 @@ def realizar_pericia_video(video_file):
         if ret:
             cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
-            
-            # --- NOVO SENSOR ANATÔMICO ---
+
             faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
-            
-            # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é MUITO lisa)
+
             limite_textura = 280 if len(faces) > 0 else 250
-            # --- LINHA DE DIAGNÓSTICO TEMPORÁRIA ---
-            # --- DIAGNÓSTICO NA TELA DO APP ---
-            
-            # Se a textura for menor que o limite, marcamos como suspeito
+
             if score_textura < limite_textura:
                 frames_suspeitos += 1
+
     cap.release()
+
     if os.path.exists("temp_investigacao.mp4"):
         os.remove("temp_investigacao.mp4")
 
@@ -76,7 +71,7 @@ def realizar_pericia_video(video_file):
         "fps": fps
     }
 
-# --- 3. INTERFACE E PERÍCIA DE IMAGEM ---
+# --- INTERFACE DE IMAGEM E MOTOR DE CAPTURA WEB ---
 st.title("🛡️ IA-Detector")
 st.subheader("O Soro Antiofídico Digital contra a Desinformação")
 
@@ -132,7 +127,6 @@ with aba_img:
             else:
                 st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
 
-# --- FUNÇÃO AUXILIAR PARA LINKS (NOVA) ---
 def baixar_video_temporario(url):
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -144,7 +138,7 @@ def baixar_video_temporario(url):
         info = ydl.extract_info(url, download=True)
         return ydl.prepare_filename(info)
 
-# --- 4. PERÍCIA DE VÍDEO (v1.7.1 - ATUALIZADA) ---
+# --- INTERRUPTOR DE PERÍCIA E DIAGNÓSTICO DE VÍDEO ---
 with aba_vid:
     st.markdown('<div class="instrucao"><b>INVESTIGAÇÃO:</b> Suba vídeos (.mp4) ou cole links para análise técnica.</div>', unsafe_allow_html=True)
 
@@ -162,7 +156,6 @@ with aba_vid:
         url_vid = st.text_input("Cole o link (YouTube, X, Instagram):")
 
     if st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA", use_container_width=True):
-        # Validação de entrada
         pode_analisar = (tipo_vid == "Upload Local" and arquivo_vid is not None) or \
                         (tipo_vid == "Link da Web" and url_vid != "")
 
@@ -179,10 +172,8 @@ with aba_vid:
                     else:
                         video_para_analise = arquivo_vid
 
-                    # Chamada unificada da perícia
                     dados = realizar_pericia_video(video_para_analise)
                     
-                    # Lógica de Diagnóstico
                     ia_score = 100 if dados['anomalias_textura'] > 12 else (75 if dados['anomalias_textura'] > 5 else 0)
                     humano_score = 100 - ia_score
                     
@@ -204,12 +195,11 @@ with aba_vid:
                 except Exception as e:
                     st.error(f"Erro técnico: {e}")
                 finally:
-                    # Garante que o arquivo temporário suma após a análise
                     if caminho_temp and os.path.exists(caminho_temp):
                         os.remove(caminho_temp)
         else:
-            st.error("❌ Por favor, forneça um vídeo ou link válido.")# --- 
-            
+            st.error("❌ Por favor, forneça um vídeo ou link válido.")
+
 # --- ASSINATURA E AVISO ÉTICO ---
 st.divider()
 st.caption("IA-Detector v1.7.1 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

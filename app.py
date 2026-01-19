@@ -7,6 +7,8 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from io import BytesIO
 import os
+import yt_dlp
+import tempfile
 
 # --- INICIALIZAÇÃO DO DETECTOR DE ROSTOS ---
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')

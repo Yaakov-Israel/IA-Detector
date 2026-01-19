@@ -7,16 +7,12 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from io import BytesIO
 import os
-import yt_dlp
-import tempfile
 
 # --- INICIALIZAÇÃO DO DETECTOR DE ROSTOS ---
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # --- 1. CONFIGURAÇÃO E ESTILO ---
-st.set_page_config(page_title="IA Detector Pro",
-                   page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
 
 st.markdown("""
     <style>
@@ -28,8 +24,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 2. AGENTES DE PERÍCIA FORENSE ---
-
-
 def realizar_pericia_video(video_file):
     """Analisa o vídeo em busca de anomalias de textura e física"""
     with open("temp_investigacao.mp4", "wb") as f:
@@ -51,15 +45,15 @@ def realizar_pericia_video(video_file):
         if ret:
             cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
-
+            
             # --- NOVO SENSOR ANATÔMICO ---
             faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
-
+            
             # Se encontrar rosto, o sarrafo da textura sobe (IA de rosto é MUITO lisa)
             limite_textura = 280 if len(faces) > 0 else 250
             # --- LINHA DE DIAGNÓSTICO TEMPORÁRIA ---
             # --- DIAGNÓSTICO NA TELA DO APP ---
-
+            
             # Se a textura for menor que o limite, marcamos como suspeito
             if score_textura < limite_textura:
                 frames_suspeitos += 1
@@ -74,7 +68,6 @@ def realizar_pericia_video(video_file):
         "fps": fps
     }
 
-
 # --- 3. INTERFACE E PERÍCIA DE IMAGEM ---
 st.title("🛡️ IA-Detector")
 st.subheader("O Soro Antiofídico Digital contra a Desinformação")
@@ -82,26 +75,22 @@ st.subheader("O Soro Antiofídico Digital contra a Desinformação")
 aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
 
 with aba_img:
-    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Analise metadados EXIF e estrutura de pixels.</div>',
-                unsafe_allow_html=True)
-
+    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Analise metadados EXIF e estrutura de pixels.</div>', unsafe_allow_html=True)
+    
     if st.button("♻️ Nova Análise de Imagem", key="reset_img"):
         st.rerun()
 
-    tipo_img = st.radio(
-        "Fonte:", ["Upload Local", "Link da Web"], horizontal=True)
+    tipo_img = st.radio("Fonte:", ["Upload Local", "Link da Web"], horizontal=True)
     img_final = None
 
     if tipo_img == "Upload Local":
-        arquivo = st.file_uploader("Suba a imagem", type=[
-                                   'jpg', 'png', 'jpeg'], key="up_img")
+        arquivo = st.file_uploader("Suba a imagem", type=['jpg', 'png', 'jpeg'], key="up_img")
         if arquivo: img_final = arquivo
     else:
         url_input = st.text_input("URL da imagem:")
         if url_input:
             try:
-                res = requests.get(url_input, headers={
-                                   'User-Agent': 'Mozilla/5.0'}, timeout=10)
+                res = requests.get(url_input, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
                 if res.status_code == 200: img_final = BytesIO(res.content)
             except: st.error("Erro ao acessar imagem.")
 
@@ -110,13 +99,12 @@ with aba_img:
         if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
             img = Image.open(img_final)
             exif_data = img.getexif()
-
+            
             # Verificação de Metadados (O rastro da câmera)
             if exif_data:
                 st.success("✅ Metadados de Hardware detectados!")
                 with st.expander("🔍 Ver Evidências Técnicas (Câmera, Data, GPS)"):
-                    st.write(
-                        "**Aviso de Privacidade:** Os dados abaixo são extraídos do arquivo fornecido.")
+                    st.write("**Aviso de Privacidade:** Os dados abaixo são extraídos do arquivo fornecido.")
                     for tag_id, valor in exif_data.items():
                         tag = TAGS.get(tag_id, tag_id)
                         st.write(f"**{tag}:** {valor}")
@@ -126,30 +114,15 @@ with aba_img:
                 st.warning("⚠️ Sem metadados de hardware.")
                 score_real = 25
                 veredito_texto = "Arte Digital, Montagem ou Geração por IA (Imagem Processada)"
-
+            
             # Exibição do Laudo com a gradação que combinamos
             st.subheader("📊 Laudo de Autenticidade")
             st.progress(score_real / 100)
-
+            
             if score_real >= 90:
                 st.success(f"**Confiança:** {score_real}% - {veredito_texto}")
             else:
                 st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
-
-                # --- FUNÇÃO AUXILIAR PARA LINKS (NOVA) ---
-
-
-def baixar_video_temporario(url):
-    ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-        'outtmpl': os.path.join(tempfile.gettempdir(), '%(id)s.%(ext)s'),
-        'quiet': True,
-        'no_warnings': True,
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        return ydl.prepare_filename(info)
-
 
 # --- 4. PERÍCIA DE VÍDEO (CONSERTADO E COMPLETO) ---
 with aba_vid:
@@ -158,39 +131,41 @@ with aba_vid:
     if st.button("♻️ Nova Análise de Vídeo", key="reset_pericia_vid"):
         st.rerun()
 
-    tipo_vid = st.radio(
-        "Origem:", ["Upload Local", "Link da Web"], horizontal=True, key="video_source")
+    tipo_vid = st.radio("Origem:", ["Upload Local", "Link da Web"], horizontal=True, key="video_source")
 
     # Garante que o uploader apareça corretamente
     arquivo_vid = None
     if tipo_vid == "Upload Local":
-        arquivo_vid = st.file_uploader("Suba o vídeo (.mp4, .mov)", type=[
-                                       'mp4', 'mov'], key="up_vid")
+        arquivo_vid = st.file_uploader("Suba o vídeo (.mp4, .mov)", type=['mp4', 'mov'], key="up_vid")
     else:
-        url_vid = st.text_input("Cole o link (X, Instagram, YouTube):")
-        # Removida a linha de "Habilitada na v1.7" pois agora é real!
+        url_vid = st.text_input("Cole o link:")
+        st.info("A análise de links externos será habilitada na v1.7.")
 
     if st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA", use_container_width=True):
-        # Validação: precisamos de um arquivo se for local, ou de um link se for web
-        pode_analisar = (tipo_vid == "Upload Local" and arquivo_vid is not None) or \
-                        (tipo_vid == "Link da Web" and url_vid != "")
-
-        if pode_analisar:
+        if tipo_vid == "Upload Local" and arquivo_vid is not None:
             with st.status("Processando perícia técnica...") as s:
-                video_para_analise = None
-                caminho_temp = None
-
-                try:
-                    if tipo_vid == "Link da Web":
-                        s.update(label="Pescando vídeo da web... aguarde.")
-                        caminho_temp = baixar_video_temporario(url_vid)
-                        video_para_analise = caminho_temp
-                    else:
-                        video_para_analise = arquivo_vid
-
-                    # --- CHAMA A SUA FUNÇÃO QUE JÁ FUNCIONA ---
-                    dados = realizar_pericia_video(video_para_analise)
-
+                # Chama a função do Bloco 2
+                dados = realizar_pericia_video(arquivo_vid)
+                
+                # --- REINSTALANDO A LÓGICA DA MÁQUINA (Necessário para não dar erro) ---
+                ia_score = 100 if dados['anomalias_textura'] > 12 else (75 if dados['anomalias_textura'] > 5 else 0)
+                humano_score = 100 - ia_score
+                
+                st.subheader("📊 Laudo Forense")
+                st.progress(humano_score / 100)
+                
+                if humano_score <= 35:
+                    st.error(f"🚫 VEREDITO: CONTEÚDO IDENTIFICADO COMO IA ({ia_score}%)")
+                    st.write("**Análise:** Inconsistência crítica na micro-textura orgânica e padrões de ruído artificial detectados.")
+                elif humano_score <= 65:
+                    st.warning(f"⚠️ VEREDITO: CONTEÚDO SUSPEITO ({ia_score}%)")
+                    st.write("**Análise:** Anomalias na densidade de detalhes superficiais sugerem manipulação sintética.")
+                else:
+                    st.success(f"✅ VEREDITO: CONTEÚDO GENUÍNO ({humano_score}%)")
+                    st.write("**Análise:** Padrões de textura e frequência de imagem condizentes com captação orgânica real.")
+                
+                s.update(label="Perícia Concluída!", state="complete")
+        else:
             st.error("❌ Erro: Por favor, selecione e suba um arquivo de vídeo primeiro.")
 # --- 5. RODAPÉ (COM AVISO ÉTICO) ---
 st.divider()

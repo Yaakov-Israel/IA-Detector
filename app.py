@@ -208,6 +208,8 @@ with aba_vid:
                     if caminho_temp and os.path.exists(caminho_temp):
                         os.remove(caminho_temp)
         else:
-            st.error("❌ Por favor, forneça um vídeo ou link válido.")# --- 5. RODAPÉ (COM AVISO ÉTICO) ---
+            st.error("❌ Por favor, forneça um vídeo ou link válido.")# --- 
+            
+5. RODAPÉ (COM AVISO ÉTICO) ---
 st.divider()
 st.caption("IA-Detector v1.7.1 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

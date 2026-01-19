@@ -37,7 +37,8 @@ def realizar_pericia_video(video_file):
         with open(caminho_final, "wb") as f:
             f.write(video_file.getbuffer())
 
-    cap = cv2.VideoCapture(caminho_final)    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap = cv2.VideoCapture(caminho_final)
+    fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     largura = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
     altura = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)

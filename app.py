@@ -25,7 +25,7 @@ st.markdown("""
 
 # --- SIDEBAR (Entra logo abaixo do unsafe_allow_html=True) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/7542/7542190.png", width=80)
+    st.image("https://cdn-icons-png.flaticon.com/512/7542/7542190.png", width=40)
     st.title("Painel de Controle")
     st.markdown("---")
     

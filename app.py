@@ -23,6 +23,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- SIDEBAR (Entra logo abaixo do unsafe_allow_html=True) ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/7542/7542190.png", width=80)
+    st.title("Painel de Controle")
+    st.markdown("---")
+    
+    escolha = st.radio(
+        "Selecione o que deseja analisar:",
+        ["🖼️ Analisar Imagem", "🎥 Analisar Vídeo"],
+        index=0
+    )
+    
+    st.markdown("---")
+    st.subheader("📖 Dicionário Simples")
+    with st.expander("O que é ELA?"):
+        st.write("É um raio-x dos pixels. Se algo brilhar muito em um só lugar, pode ter sido colado ou editado.")
+    
+    with st.expander("O que é EXIF?"):
+        st.write("São as informações da câmera (marca, data). IAs e fotos de redes sociais costumam não ter isso.")
+
+# --- TÍTULO CENTRAL ---
+st.title("🛡️ IA-Detector")
+st.subheader("O Soro Antiofídico Digital")
+
 # --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
 def analisar_ela(img_input, quality=90):
     """Realiza a Análise de Nível de Erro (ELA) para detectar manipulações"""

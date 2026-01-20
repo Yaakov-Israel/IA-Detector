@@ -24,6 +24,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
+def analisar_ela(img_input, quality=90):
+    """Realiza a Análise de Nível de Erro (ELA) para detectar manipulações"""
+    temp_ela = "temp_ela.jpg"
+    
+    # Converte para RGB se necessário (remover canal alpha de PNGs)
+    if img_input.mode != 'RGB':
+        img_input = img_input.convert('RGB')
+    
+    # Passo 1: Salva a imagem com uma compressão específica
+    img_input.save(temp_ela, 'JPEG', quality=quality)
+    img_comprimida = Image.open(temp_ela)
+    
+    # Passo 2: Calcula a diferença entre a original e a comprimida
+    ela_img = ImageChops.difference(img_input, img_comprimida)
+    
+    # Passo 3: Potencializa o brilho das diferenças para o olho humano ver
+    extrema = ela_img.getextrema()
+    max_diff = max([ex[1] for ex in extrema])
+    if max_diff == 0: max_diff = 1
+    scale = 255.0 / max_diff
+    ela_img = ImageEnhance.Brightness(ela_img).enhance(scale)
+    
+    os.remove(temp_ela)
+    return ela_img
+    
 def realizar_pericia_video(video_file):
     """Analisa o vídeo em busca de anomalias de textura e física"""
     caminho_final = ""

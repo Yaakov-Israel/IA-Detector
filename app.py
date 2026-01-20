@@ -118,7 +118,7 @@ def realizar_pericia_video(video_file):
 
 # --- INTERFACE DE IMAGEM E MOTOR DE CAPTURA WEB ---
 st.title("🛡️ IA-Detector")
-st.subheader("O Soro Antiofídico Digital contra a Desinformação")
+st.subheader("A verdade por trás dos pixels")
 
 aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
 

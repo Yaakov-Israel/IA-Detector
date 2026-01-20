@@ -3,7 +3,7 @@ import requests
 import time
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageChops, ImageEnhance
 from PIL.ExifTags import TAGS
 from io import BytesIO
 import os

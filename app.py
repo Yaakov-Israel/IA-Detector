@@ -123,16 +123,27 @@ with aba_img:
             except: st.error("Erro ao acessar imagem.")
 
     if img_final:
-        st.image(img_final, use_container_width=True)
+        # Criamos o objeto de imagem para processamento
+        img = Image.open(img_final)
+        
         if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
-            img = Image.open(img_final)
+            # Executa os dois agentes: EXIF e ELA
             exif_data = img.getexif()
+            img_ela = analisar_ela(img)
             
-            # Verificação de Metadados (O rastro da câmera)
+            # Exibição Visual (Lado a Lado)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("**Imagem Original**")
+                st.image(img, use_container_width=True)
+            with col2:
+                st.write("**Mapa ELA (Análise de Pixels)**")
+                st.image(img_ela, use_container_width=True)
+            
+            # Verificação de Metadados
             if exif_data:
                 st.success("✅ Metadados de Hardware detectados!")
-                with st.expander("🔍 Ver Evidências Técnicas (Câmera, Data, GPS)"):
-                    st.write("**Aviso de Privacidade:** Os dados abaixo são extraídos do arquivo fornecido.")
+                with st.expander("🔍 Ver Evidências Técnicas"):
                     for tag_id, valor in exif_data.items():
                         tag = TAGS.get(tag_id, tag_id)
                         st.write(f"**{tag}:** {valor}")
@@ -141,17 +152,11 @@ with aba_img:
             else:
                 st.warning("⚠️ Sem metadados de hardware.")
                 score_real = 25
-                veredito_texto = "Arte Digital, Montagem ou Geração por IA (Imagem Processada)"
+                veredito_texto = "Arte Digital, Montagem ou Geração por IA"
             
-            # Exibição do Laudo com a gradação que combinamos
             st.subheader("📊 Laudo de Autenticidade")
             st.progress(score_real / 100)
-            
-            if score_real >= 90:
-                st.success(f"**Confiança:** {score_real}% - {veredito_texto}")
-            else:
-                st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
-
+            st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
 def baixar_video_temporario(url):
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',

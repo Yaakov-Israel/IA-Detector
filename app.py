@@ -43,10 +43,6 @@ with st.sidebar:
     with st.expander("O que é EXIF?"):
         st.write("São as informações da câmera (marca, data). IAs e fotos de redes sociais costumam não ter isso.")
 
-# --- TÍTULO CENTRAL ---
-st.title("🛡️ IA-Detector")
-st.subheader("O Soro Antiofídico Digital")
-
 # --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
 def analisar_ela(img_input, quality=90):
     """Realiza a Análise de Nível de Erro (ELA) para detectar manipulações"""

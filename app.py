@@ -144,7 +144,7 @@ with aba_img:
 
     if img_final:
         # Criamos o objeto de imagem para processamento
-        img = ImageOps.exif_transpose(img)
+        img = Image.open(img_final)
         
         if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
             # Executa os dois agentes: EXIF e ELA

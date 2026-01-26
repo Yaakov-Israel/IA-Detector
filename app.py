@@ -252,4 +252,4 @@ with aba_vid:
 
 # --- ASSINATURA E AVISO ÉTICO ---
 st.divider()
-st.caption("IA-Detector v1.7.1 | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")
+st.caption("IA-Detector v1.7.2 BETA | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")

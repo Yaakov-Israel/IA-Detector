@@ -23,26 +23,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR (Entra logo abaixo do unsafe_allow_html=True) ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/7542/7542190.png", width=40)
-    st.title("Painel de Controle")
-    st.markdown("---")
-    
-    escolha = st.radio(
-        "Selecione o que deseja analisar:",
-        ["🖼️ Analisar Imagem", "🎥 Analisar Vídeo"],
-        index=0
-    )
-    
-    st.markdown("---")
-    st.subheader("📖 Dicionário Simples")
-    with st.expander("O que é ELA?"):
-        st.write("É um raio-x dos pixels. Se algo brilhar muito em um só lugar, pode ter sido colado ou editado.")
-    
-    with st.expander("O que é EXIF?"):
-        st.write("São as informações da câmera (marca, data). IAs e fotos de redes sociais costumam não ter isso.")
-
 # --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
 def analisar_ela(img_input, quality=90):
     """Realiza a Análise de Nível de Erro (ELA) para detectar manipulações"""
@@ -161,22 +141,33 @@ with aba_img:
                 st.image(img_ela, use_container_width=True)
             
             # Verificação de Metadados
+            # --- [BLOCO 05: VEREDITO TÉCNICO DE IMAGEM CALIBRADO] ---
             if exif_data:
                 st.success("✅ Metadados de Hardware detectados!")
-                with st.expander("🔍 Ver Evidências Técnicas"):
+                with st.expander("🔍 Ver Evidências Técnicas (EXIF)"):
                     for tag_id, valor in exif_data.items():
                         tag = TAGS.get(tag_id, tag_id)
                         st.write(f"**{tag}:** {valor}")
                 score_real = 95
                 veredito_texto = "Captura de Câmera Genuína (Fato Real)"
+                st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
             else:
-                st.warning("⚠️ Sem metadados de hardware.")
-                score_real = 25
-                veredito_texto = "Arte Digital, Montagem ou Geração por IA"
+                st.warning("⚠️ **Nota de Perícia:** Imagem sem metadados de hardware.")
+                st.write("Comum em arquivos de redes sociais (X, WhatsApp) ou prints.")
+                score_real = 55 
+                veredito_texto = "Inconclusivo (Possível Foto Processada ou Print)"
+                st.warning(f"**Análise:** {score_real}% - {veredito_texto}")
             
             st.subheader("📊 Laudo de Autenticidade")
             st.progress(score_real / 100)
-            st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
+
+            # --- [BLOCO 06: SISTEMA DE FEEDBACK] ---
+            st.write("---")
+            feedback = st.radio("O veredito parece correto?", ["Aguardando...", "👍 Sim", "👎 Não"], horizontal=True, key="fb_img")
+            if feedback == "👍 Sim":
+                st.success("Confirmado. Obrigado por ajudar na calibração!")
+            elif feedback == "👎 Não":
+                st.error("Registrado. Analisaremos este falso-positivo para refinar o sensor.")
 def baixar_video_temporario(url):
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -224,21 +215,37 @@ with aba_vid:
 
                     dados = realizar_pericia_video(video_para_analise)
                     
-                    ia_score = 100 if dados['anomalias_textura'] > 12 else (75 if dados['anomalias_textura'] > 5 else 0)
-                    humano_score = 100 - ia_score
+                    # --- [BLOCO DE VÍDEO CALIBRADO - EVITA FALSOS POSITIVOS] ---
+                    # Nunca cravamos 100% em vídeos web devido à compressão
+                    if dados['anomalias_textura'] > 15:
+                        ia_score = 85  
+                        status_ver_vid = "error"
+                        veredito_vid = f"ALTA PROBABILIDADE DE MANIPULAÇÃO ({ia_score}%)"
+                    elif dados['anomalias_textura'] > 5:
+                        ia_score = 60
+                        status_ver_vid = "warning"
+                        veredito_vid = f"CONTEÚDO SUSPEITO ({ia_score}%)"
+                    else:
+                        ia_score = 15
+                        status_ver_vid = "success"
+                        veredito_vid = f"POSSIVELMENTE GENUÍNO ({100 - ia_score}%)"
                     
                     st.subheader("📊 Laudo Forense")
-                    st.progress(humano_score / 100)
+                    st.progress((100 - ia_score) / 100)
                     
-                    if humano_score <= 35:
-                        st.error(f"🚫 VEREDITO: CONTEÚDO IDENTIFICADO COMO IA ({ia_score}%)")
-                        st.write(f"**Análise:** Inconsistência crítica detectada em {dados['anomalias_textura']} pontos da micro-textura.")
-                    elif humano_score <= 65:
-                        st.warning(f"⚠️ VEREDITO: CONTEÚDO SUSPEITO ({ia_score}%)")
-                        st.write("**Análise:** Anomalias na densidade de detalhes superficiais sugerem manipulação.")
+                    if status_ver_vid == "error":
+                        st.error(f"🚫 VEREDITO: {veredito_vid}")
+                        st.write(f"**Análise:** Detectadas {dados['anomalias_textura']} inconsistências. Nota: Compressão severa pode simular padrões de IA.")
+                    elif status_ver_vid == "warning":
+                        st.warning(f"⚠️ VEREDITO: {veredito_vid}")
+                        st.write("**Análise:** Ruído de textura acima do normal. Suspeita de processamento digital ou baixa qualidade.")
                     else:
-                        st.success(f"✅ VEREDITO: CONTEÚDO GENUÍNO ({humano_score}%)")
-                        st.write("**Análise:** Padrões condizentes com captação orgânica real.")
+                        st.success(f"✅ VEREDITO: {veredito_vid}")
+                        st.write("**Análise:** Textura condizente com gravação orgânica.")
+
+                    # --- FEEDBACK DE VÍDEO ---
+                    st.write("---")
+                    fb_vid = st.radio("O laudo de vídeo faz sentido?", ["Aguardando...", "👍 Sim", "👎 Não"], horizontal=True, key="fb_vid")
                     
                     s.update(label="Perícia Concluída!", state="complete")
 

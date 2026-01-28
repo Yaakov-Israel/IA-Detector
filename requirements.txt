@@ -1,7 +1,9 @@
-moviepy
-numpy
-opencv-python-headless
-Pillow
-requests
 streamlit
+opencv-python-headless
+numpy
+pillow
+requests
 yt-dlp
+tensorflow
+keras-cv
+keras-hub

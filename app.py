@@ -111,8 +111,14 @@ with aba_img:
     else:
         url_img = st.text_input("URL da imagem:")
         if url_img:
-            res = requests.get(url_img, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-            img_final = Image.open(BytesIO(res.content))
+            try:
+                res = requests.get(url_img, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+                if res.status_code == 200:
+                    img_final = Image.open(BytesIO(res.content))
+                else:
+                    st.error("Não consegui acessar a imagem. O link pode estar bloqueado.")
+            except Exception as e:
+                st.error(f"Erro ao carregar URL: {e}")
 
     if img_final and st.button("🚀 INICIAR ANÁLISE DE IMAGEM"):
         img_ela = analisar_ela(img_final)
@@ -137,7 +143,7 @@ with aba_vid:
         url_vid = st.text_input("Cole o link (YouTube, X, Instagram):")
         if url_vid: video_origem = url_vid
 
-    if video_origem and st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA"):
+    if video_origem is not None and st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA"):
         with st.status("IA analisando frames...") as s:
             try:
                 caminho_processar = video_origem

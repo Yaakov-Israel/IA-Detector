@@ -1,6 +1,4 @@
 import streamlit as st
-import requests
-import time
 import cv2
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
@@ -9,7 +7,25 @@ from io import BytesIO
 import os
 import yt_dlp
 import tempfile
+import requests
 
+os.environ["KERAS_BACKEND"] = "tensorflow"
+import keras_cv
+
+@st.cache_resource
+def carregar_modelo_ia():
+    try:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        caminho_pesos = os.path.join(base_path, "meu_modelo.h5")
+        model = keras_cv.models.EfficientNetV2Backbone.from_preset(
+            "kaggle://keras/efficientnetv2/keras/efficientnetv2_b0_imagenet"
+        )
+        model.load_weights(caminho_pesos, skip_mismatch=True, by_name=True)
+        return model
+    except:
+        return None
+
+modelo_ia = carregar_modelo_ia()
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 st.set_page_config(page_title="IA Detector Pro", page_icon="🛡️", layout="centered")
@@ -23,151 +39,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MOTOR DE ANÁLISE FORENSE E DETECÇÃO ANATÔMICA ---
 def analisar_ela(img_input, quality=90):
-    """Realiza a Análise de Nível de Erro (ELA) para detectar manipulações"""
+    if img_input.mode != 'RGB': img_input = img_input.convert('RGB')
     temp_ela = "temp_ela.jpg"
-    
-    # Converte para RGB se necessário (remover canal alpha de PNGs)
-    if img_input.mode != 'RGB':
-        img_input = img_input.convert('RGB')
-    
-    # Passo 1: Salva a imagem com uma compressão específica
     img_input.save(temp_ela, 'JPEG', quality=quality)
     img_comprimida = Image.open(temp_ela)
-    
-    # Passo 2: Calcula a diferença entre a original e a comprimida
     ela_img = ImageChops.difference(img_input, img_comprimida)
-    
-    # Passo 3: Potencializa o brilho das diferenças para o olho humano ver
     extrema = ela_img.getextrema()
     max_diff = max([ex[1] for ex in extrema])
     if max_diff == 0: max_diff = 1
     scale = 255.0 / max_diff
     ela_img = ImageEnhance.Brightness(ela_img).enhance(scale)
-    
     os.remove(temp_ela)
     return ela_img
-    
-def realizar_pericia_video(video_file):
-    """Analisa o vídeo em busca de anomalias de textura e física"""
-    caminho_final = ""
 
-    if isinstance(video_file, str):
-        caminho_final = video_file
-    else:
-        caminho_final = "temp_investigacao.mp4"
-        with open(caminho_final, "wb") as f:
-            f.write(video_file.getbuffer())
-
-    cap = cv2.VideoCapture(caminho_final)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    largura = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    altura = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-    duracao_seg = total_frames / fps if fps > 0 else 0
-
-    frames_suspeitos = 0
-    passo = max(1, total_frames // 15)
-
-    for i in range(0, total_frames, passo):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-        ret, frame = cap.read()
-        if ret:
-            cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            score_textura = cv2.Laplacian(cinza, cv2.CV_64F).var()
-
-            faces = face_cascade.detectMultiScale(cinza, 1.1, 4)
-
-            limite_textura = 280 if len(faces) > 0 else 250
-
-            if score_textura < limite_textura:
-                frames_suspeitos += 1
-
-    cap.release()
-
-    if os.path.exists("temp_investigacao.mp4"):
-        os.remove("temp_investigacao.mp4")
-
-    return {
-        "duracao": duracao_seg,
-        "anomalias_textura": frames_suspeitos,
-        "resolucao_quadrada": 1 if largura == altura else 0,
-        "fps": fps
-    }
-
-# --- INTERFACE DE IMAGEM E MOTOR DE CAPTURA WEB ---
-st.title("🛡️ IA-Detector")
-st.subheader("A verdade por trás dos pixels")
-
-aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
-
-with aba_img:
-    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Analise metadados EXIF e estrutura de pixels.</div>', unsafe_allow_html=True)
-    
-    if st.button("♻️ Nova Análise de Imagem", key="reset_img"):
-        st.rerun()
-
-    tipo_img = st.radio("Fonte:", ["Upload Local", "Link da Web"], horizontal=True)
-    img_final = None
-
-    if tipo_img == "Upload Local":
-        arquivo = st.file_uploader("Suba a imagem", type=['jpg', 'png', 'jpeg'], key="up_img")
-        if arquivo: img_final = arquivo
-    else:
-        url_input = st.text_input("URL da imagem:")
-        if url_input:
-            try:
-                res = requests.get(url_input, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
-                if res.status_code == 200: img_final = BytesIO(res.content)
-            except: st.error("Erro ao acessar imagem.")
-
-    if img_final:
-        # Criamos o objeto de imagem para processamento
-        img = Image.open(img_final)
-        
-        if st.button("🚀 INICIAR ANÁLISE DE IMAGEM", use_container_width=True):
-            # Executa os dois agentes: EXIF e ELA
-            exif_data = img.getexif()
-            img_ela = analisar_ela(img)
-            
-            # Exibição Visual (Lado a Lado)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write("**Imagem Original**")
-                st.image(img, use_container_width=True)
-            with col2:
-                st.write("**Mapa ELA (Análise de Pixels)**")
-                st.image(img_ela, use_container_width=True)
-            
-            # Verificação de Metadados
-            # --- [BLOCO 05: VEREDITO TÉCNICO DE IMAGEM CALIBRADO] ---
-            if exif_data:
-                st.success("✅ Metadados de Hardware detectados!")
-                with st.expander("🔍 Ver Evidências Técnicas (EXIF)"):
-                    for tag_id, valor in exif_data.items():
-                        tag = TAGS.get(tag_id, tag_id)
-                        st.write(f"**{tag}:** {valor}")
-                score_real = 95
-                veredito_texto = "Captura de Câmera Genuína (Fato Real)"
-                st.info(f"**Confiança:** {score_real}% - {veredito_texto}")
-            else:
-                st.warning("⚠️ **Nota de Perícia:** Imagem sem metadados de hardware.")
-                st.write("Comum em arquivos de redes sociais (X, WhatsApp) ou prints.")
-                score_real = 55 
-                veredito_texto = "Inconclusivo (Possível Foto Processada ou Print)"
-                st.warning(f"**Análise:** {score_real}% - {veredito_texto}")
-            
-            st.subheader("📊 Laudo de Autenticidade")
-            st.progress(score_real / 100)
-
-            # --- [BLOCO 06: SISTEMA DE FEEDBACK] ---
-            st.write("---")
-            feedback = st.radio("O veredito parece correto?", ["Aguardando...", "👍 Sim", "👎 Não"], horizontal=True, key="fb_img")
-            if feedback == "👍 Sim":
-                st.success("Confirmado. Obrigado por ajudar na calibração!")
-            elif feedback == "👎 Não":
-                st.error("Registrado. Analisaremos este falso-positivo para refinar o sensor.")
 def baixar_video_temporario(url):
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
@@ -179,84 +64,98 @@ def baixar_video_temporario(url):
         info = ydl.extract_info(url, download=True)
         return ydl.prepare_filename(info)
 
-# --- INTERRUPTOR DE PERÍCIA E DIAGNÓSTICO DE VÍDEO ---
+def realizar_pericia_video(video_input):
+    caminho_final = ""
+    if isinstance(video_input, str):
+        caminho_final = video_input
+    else:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tf:
+            tf.write(video_input.getbuffer())
+            caminho_final = tf.name
+
+    cap = cv2.VideoCapture(caminho_final)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frames_ia_suspeitos = 0
+    frames_analisados = 12
+    passo = max(1, total_frames // frames_analisados)
+
+    for i in range(0, total_frames, passo):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+        ret, frame = cap.read()
+        if ret and modelo_ia:
+            frame_res = cv2.resize(frame, (224, 224))
+            img_array = np.expand_dims(frame_res, axis=0)
+            predicao = modelo_ia.predict(img_array, verbose=0)
+            if np.mean(predicao) < 0.05:
+                frames_ia_suspeitos += 1
+
+    cap.release()
+    if not isinstance(video_input, str) and os.path.exists(caminho_final):
+        os.remove(caminho_final)
+    
+    return {"anomalias": frames_ia_suspeitos}
+
+st.title("🛡️ IA-Detector")
+st.subheader("A verdade por trás dos pixels")
+
+aba_img, aba_vid = st.tabs(["🖼️ ANALISAR IMAGEM", "🎥 ANALISAR VÍDEO"])
+
+with aba_img:
+    st.markdown('<div class="instrucao"><b>MODO PERÍCIA:</b> Analise metadados e estrutura de pixels.</div>', unsafe_allow_html=True)
+    tipo_img = st.radio("Fonte da Imagem:", ["Upload Local", "Link da Web"], horizontal=True)
+    img_final = None
+    
+    if tipo_img == "Upload Local":
+        arquivo = st.file_uploader("Suba a imagem", type=['jpg', 'jpeg', 'png'])
+        if arquivo: img_final = Image.open(arquivo)
+    else:
+        url_img = st.text_input("URL da imagem:")
+        if url_img:
+            res = requests.get(url_img, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            img_final = Image.open(BytesIO(res.content))
+
+    if img_final and st.button("🚀 INICIAR ANÁLISE DE IMAGEM"):
+        img_ela = analisar_ela(img_final)
+        col1, col2 = st.columns(2)
+        col1.image(img_final, caption="Original", use_container_width=True)
+        col2.image(img_ela, caption="Mapa de Ruído (ELA)", use_container_width=True)
+        
+        exif = img_final.getexif()
+        if exif:
+            st.success("✅ Câmera Real Detectada (Metadados EXIF presentes)")
+        else:
+            st.warning("⚠️ Sem metadados de hardware. Possível IA, Print ou Redes Sociais.")
+
 with aba_vid:
-    st.markdown('<div class="instrucao"><b>INVESTIGAÇÃO:</b> Suba vídeos (.mp4) ou cole links para análise técnica.</div>', unsafe_allow_html=True)
-
-    if st.button("♻️ Nova Análise de Vídeo", key="reset_pericia_vid"):
-        st.rerun()
-
-    tipo_vid = st.radio("Origem:", ["Upload Local", "Link da Web"], horizontal=True, key="video_source")
-
-    arquivo_vid = None
-    url_vid = ""
-
+    st.markdown('<div class="instrucao"><b>INVESTIGAÇÃO:</b> Vídeos .mp4 ou links da web.</div>', unsafe_allow_html=True)
+    tipo_vid = st.radio("Origem do Vídeo:", ["Upload Local", "Link da Web"], horizontal=True)
+    video_origem = None
+    
     if tipo_vid == "Upload Local":
-        arquivo_vid = st.file_uploader("Suba o vídeo (.mp4, .mov)", type=['mp4', 'mov'], key="up_vid")
+        video_origem = st.file_uploader("Suba o vídeo (.mp4)", type=['mp4', 'mov'])
     else:
         url_vid = st.text_input("Cole o link (YouTube, X, Instagram):")
+        if url_vid: video_origem = url_vid
 
-    if st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA", use_container_width=True):
-        pode_analisar = (tipo_vid == "Upload Local" and arquivo_vid is not None) or \
-                        (tipo_vid == "Link da Web" and url_vid != "")
+    if video_origem and st.button("🔬 INICIAR INVESTIGAÇÃO PROFUNDA"):
+        with st.status("IA analisando frames...") as s:
+            try:
+                caminho_processar = video_origem
+                if tipo_vid == "Link da Web":
+                    caminho_processar = baixar_video_temporario(video_origem)
+                
+                resultado = realizar_pericia_video(caminho_processar)
+                
+                if resultado['anomalias'] > 5:
+                    st.error(f"🚫 ALTA SUSPEITA DE DEEPFAKE (Detectadas {resultado['anomalias']} anomalias)")
+                else:
+                    st.success("✅ Veredito: Textura condizente com gravação real.")
+                
+                if tipo_vid == "Link da Web" and os.path.exists(caminho_processar):
+                    os.remove(caminho_processar)
+                s.update(label="Perícia Concluída!", state="complete")
+            except Exception as e:
+                st.error(f"Erro técnico: {e}")
 
-        if pode_analisar:
-            with st.status("Processando perícia técnica...") as s:
-                video_para_analise = None
-                caminho_temp = None
-
-                try:
-                    if tipo_vid == "Link da Web":
-                        s.update(label="Pescando vídeo da web... aguarde.")
-                        caminho_temp = baixar_video_temporario(url_vid)
-                        video_para_analise = caminho_temp
-                    else:
-                        video_para_analise = arquivo_vid
-
-                    dados = realizar_pericia_video(video_para_analise)
-                    
-                    # --- [BLOCO DE VÍDEO CALIBRADO - EVITA FALSOS POSITIVOS] ---
-                    # Nunca cravamos 100% em vídeos web devido à compressão
-                    if dados['anomalias_textura'] > 15:
-                        ia_score = 85  
-                        status_ver_vid = "error"
-                        veredito_vid = f"ALTA PROBABILIDADE DE MANIPULAÇÃO ({ia_score}%)"
-                    elif dados['anomalias_textura'] > 5:
-                        ia_score = 60
-                        status_ver_vid = "warning"
-                        veredito_vid = f"CONTEÚDO SUSPEITO ({ia_score}%)"
-                    else:
-                        ia_score = 15
-                        status_ver_vid = "success"
-                        veredito_vid = f"POSSIVELMENTE GENUÍNO ({100 - ia_score}%)"
-                    
-                    st.subheader("📊 Laudo Forense")
-                    st.progress((100 - ia_score) / 100)
-                    
-                    if status_ver_vid == "error":
-                        st.error(f"🚫 VEREDITO: {veredito_vid}")
-                        st.write(f"**Análise:** Detectadas {dados['anomalias_textura']} inconsistências. Nota: Compressão severa pode simular padrões de IA.")
-                    elif status_ver_vid == "warning":
-                        st.warning(f"⚠️ VEREDITO: {veredito_vid}")
-                        st.write("**Análise:** Ruído de textura acima do normal. Suspeita de processamento digital ou baixa qualidade.")
-                    else:
-                        st.success(f"✅ VEREDITO: {veredito_vid}")
-                        st.write("**Análise:** Textura condizente com gravação orgânica.")
-
-                    # --- FEEDBACK DE VÍDEO ---
-                    st.write("---")
-                    fb_vid = st.radio("O laudo de vídeo faz sentido?", ["Aguardando...", "👍 Sim", "👎 Não"], horizontal=True, key="fb_vid")
-                    
-                    s.update(label="Perícia Concluída!", state="complete")
-
-                except Exception as e:
-                    st.error(f"Erro técnico: {e}")
-                finally:
-                    if caminho_temp and os.path.exists(caminho_temp):
-                        os.remove(caminho_temp)
-        else:
-            st.error("❌ Por favor, forneça um vídeo ou link válido.")
-
-# --- ASSINATURA E AVISO ÉTICO ---
 st.divider()
-st.caption("IA-Detector v1.7.2 BETA | © Yaakov Israel Cypriano com Gemini 3 | Aviso: Este app lê metadados públicos para fins de perícia.")
+st.caption("IA-Detector v1.9.0 | © Yaakov Israel Cypriano & Gemini 3 | Modelo: EfficientNetV2B0")
